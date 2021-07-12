@@ -48,6 +48,7 @@ typedef union
 
 typedef struct
 {
+	WORD spritePalette;
 	WORD sprite;
 	WORD highByte, lowByte;
 	WORD full;
@@ -82,6 +83,19 @@ typedef union
 	} b;
 } OAMEntry;
 
+typedef union
+{
+	BYTE b;
+
+	struct
+	{
+		BYTE idx0 : 2;
+		BYTE idx1 : 2;
+		BYTE idx2 : 2;
+		BYTE idx3 : 2;
+	} colors;
+} Palette;
+
 // The screen. With emphasis on ree
 class LCD
 {
@@ -115,9 +129,9 @@ public:
 	BYTE lyc;
 	BYTE wy;
 	BYTE wx;
-	BYTE bgp;
-	BYTE obp0;
-	BYTE obp1;
+	Palette bgp;
+	Palette obp0;
+	Palette obp1;
 	BYTE dma;
 
 	PixelFetcher	fetcher;
@@ -126,4 +140,5 @@ public:
 
 	BYTE x;
 	BYTE dmaCycles;
+	bool windowMode;
 };
