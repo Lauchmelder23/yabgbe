@@ -4,7 +4,8 @@
 
 #include "bus.hpp"
 
-static BYTE colormap[4] = { 0b00000000, 0b00100101, 0b01001010, 0b10010011 };
+static BYTE colormap[4] = { 0b10010011, 0b01001010, 0b00100101, 0b00000000 };
+static WORD lastX = 0xFFFF;
 
 // Reverses a Byte (0111010 -> 0101110)
 BYTE Reverse(BYTE b) {
@@ -36,12 +37,18 @@ void LCD::Setup()
 
 	bgFIFO.full = 0x00;
 	spriteFIFO.full = 0x00;
+	windowMode = false;
 }
 
 // One LCD tick. Or clock? cycles? who even knows, the wiki uses all of 
 // those terms interchangeably while still insisting they're all different
 void LCD::Tick()
 {
+	if (lcdc.w.window)
+	{
+		volatile int jdkds = 3;
+	}
+
 	// Update cycles
 	scanlineCycles++;
 	cycles++;
@@ -87,7 +94,10 @@ void LCD::Tick()
 	{
 		// If we just started this scanline then start the OAM search phase
 		if (scanlineCycles == 0)
+		{
+			windowMode = false;
 			stat.w.mode = 2;
+		}
 
 		// Else if we entered screen space, go to the rendering phase
 		else if (scanlineCycles == 81) {
@@ -121,75 +131,87 @@ void LCD::Tick()
 				}
 			}
 		}
-
 		// Pixel Fetcher (oh lord)
 		else if (stat.w.mode == 3)
 		{
 			if (lcdc.w.obj_enable)		// IF sprite rendering is enabled
 			{
-				OAMEntry* entry;
-				for (int i = 0; i < 40; i++)		// Go through all sprites
+				if (x != lastX)		// If we already checked this pixel then skip
 				{
-					entry = (OAMEntry*)(oam.data() + i * 4);
-
-					if (x == entry->b.x - 8 && entry->b.y <= ly + 16 && ly + 8 + (8 * lcdc.w.obj_size) < entry->b.y)		// and if the sprite is rendered on the current coordinate
+					lastX = x;
+					OAMEntry* entry;
+					for (int i = 0; i < 40; i++)		// Go through all sprites
 					{
-						// Fetch Sprite!
-						WORD yOffset = (ly - entry->b.y + 16);		// offset of the tile data in vram
-						if (entry->b.attr.yFlip)
+						entry = (OAMEntry*)(oam.data() + i * 4);
+
+						if (x + 8 == entry->b.x && entry->b.y <= ly + 16 && ly + 16 < entry->b.y + 8 + (8 * lcdc.w.obj_size))		// and if the sprite is rendered on the current coordinate
 						{
-							yOffset = 8 * (1 + lcdc.w.obj_size) - yOffset;		// flip vertically by just doing this
-						}
+							if (entry->b.idx == 0x82)
+								volatile int jdsfklsd = 4;
 
-						BYTE lo = vram[2 * yOffset + (entry->b.idx * 16 * (1 + lcdc.w.obj_size))];		// get lo and hi byte of tile data
-						BYTE hi = vram[2 * yOffset + (entry->b.idx * 16 * (1 + lcdc.w.obj_size)) + 1];
-						if (entry->b.attr.xFlip)
-						{
-							lo = Reverse(lo);
-							hi = Reverse(hi);
-						}
-
-						// Feed it all into the spriteFIFO
-						spriteFIFO.lowByte = lo;
-						spriteFIFO.highByte = hi;
-						spriteFIFO.full = 0xFF;
-						
-						BYTE counter = 0;
-						while (spriteFIFO.full)		// While theres data in the fifo
-						{	
-							BYTE color = ((spriteFIFO.highByte & 0x80) >> 6) | ((spriteFIFO.lowByte & 0x80) >> 7);		// Get color of sprite at that pixel
-
-							if (color != 0x00)		// if its not transparent
+							// Fetch Sprite!
+							WORD yOffset = (ly - entry->b.y + 16) * 2;		// offset of the tile data in vram
+							if (entry->b.attr.yFlip)
 							{
-								BYTE bgPriority = (bgFIFO.sprite & (0x80 >> counter)) >> 6;		// See if there is already a sprite rendered at this pixel (if yes, 
-																								// then dont render over it because sprites with the LOWER x coord get priority)
-			
-								if (!bgPriority)
+								yOffset = 16 * (1 + lcdc.w.obj_size) - 2 - yOffset;		// flip vertically by just doing this
+							}
+
+							BYTE lo = vram[yOffset + (entry->b.idx * 16 * (1 + lcdc.w.obj_size))];		// get lo and hi byte of tile data
+							BYTE hi = vram[yOffset + (entry->b.idx * 16 * (1 + lcdc.w.obj_size)) + 1];
+
+							if (entry->b.attr.xFlip)
+							{
+								lo = Reverse(lo);
+								hi = Reverse(hi);
+							}
+
+							// Feed it all into the spriteFIFO
+							spriteFIFO.lowByte = lo;
+							spriteFIFO.highByte = hi;
+							spriteFIFO.full = 0xFF;
+
+							BYTE counter = 0;
+							while (spriteFIFO.full)		// While theres data in the fifo
+							{
+								BYTE color = ((spriteFIFO.highByte & 0x80) >> 6) | ((spriteFIFO.lowByte & 0x80) >> 7);		// Get color of sprite at that pixel
+
+								if (color != 0x00)		// if its not transparent
 								{
-									BYTE bgColor = ((bgFIFO.highByte & (0x80 >> counter)) >> 6) | ((bgFIFO.lowByte & (0x80 >> counter)) >> 7);		// Get the color of the background at this pixel
-									if (entry->b.attr.bgPriority)			// If the background/window are supposed to have priority do this
+									BYTE bgPriority = (bgFIFO.sprite & (0x80 >> counter)) >> 6;		// See if there is already a sprite rendered at this pixel (if yes, 
+																									// then dont render over it because sprites with the LOWER x coord get priority)
+
+									if (!bgPriority)
 									{
-										if (bgColor == 0x00)
+										BYTE bgColor = ((bgFIFO.highByte & (0x80 >> counter)) >> 6) | ((bgFIFO.lowByte & (0x80 >> counter)) >> 7);		// Get the color of the background at this pixel
+										
+
+										
+										if (entry->b.attr.bgPriority)			// If the background/window are supposed to have priority do this
+										{
+											if (bgColor == 0x00)
+											{
+												bgFIFO.highByte ^= ((-((spriteFIFO.highByte & 0x80) >> 7) ^ bgFIFO.highByte) & (0x80 >> counter));
+												bgFIFO.lowByte ^= ((-((spriteFIFO.lowByte & 0x80) >> 7) ^ bgFIFO.lowByte) & (0x80 >> counter));
+												bgFIFO.spritePalette ^= ((-entry->b.attr.palette ^ bgFIFO.lowByte) & (0x80 >> counter));
+												bgFIFO.sprite |= (0x80 >> counter);
+											}
+										}
+										else
 										{
 											bgFIFO.highByte ^= ((-((spriteFIFO.highByte & 0x80) >> 7) ^ bgFIFO.highByte) & (0x80 >> counter));
 											bgFIFO.lowByte ^= ((-((spriteFIFO.lowByte & 0x80) >> 7) ^ bgFIFO.lowByte) & (0x80 >> counter));
+											bgFIFO.spritePalette ^= ((-entry->b.attr.palette ^ bgFIFO.lowByte) & (0x80 >> counter));
 											bgFIFO.sprite |= (0x80 >> counter);
 										}
 									}
-									else
-									{
-										bgFIFO.highByte ^= ((((spriteFIFO.highByte & 0x80) >> 7) ^ bgFIFO.highByte) & (0x80 >> counter));
-										bgFIFO.lowByte ^= ((((spriteFIFO.lowByte & 0x80) >> 7) ^ bgFIFO.lowByte) & (0x80 >> counter));
-										bgFIFO.sprite |= (0x80 >> counter);
-									}
 								}
-							}
 
-							// Advance FIFOs
-							spriteFIFO.full <<= 1;
-							spriteFIFO.highByte <<= 1;
-							spriteFIFO.lowByte <<= 1;
-							counter++;
+								// Advance FIFOs
+								spriteFIFO.full <<= 1;
+								spriteFIFO.highByte <<= 1;
+								spriteFIFO.lowByte <<= 1;
+								counter++;
+							}
 						}
 					}
 				}
@@ -201,7 +223,12 @@ void LCD::Tick()
 			case 0:		// Get Tile
 			{
 				// TODO: Implement the window
-				WORD baseAddr = (lcdc.w.bg_tilemap ? 0x1C00 : 0x1800);
+				WORD baseAddr = 0x00;
+				if(windowMode)
+					baseAddr = (lcdc.w.window_tilemap ? 0x1C00 : 0x1800);
+				else
+					baseAddr = (lcdc.w.bg_tilemap ? 0x1C00 : 0x1800);
+
 				BYTE fetcherX = ((scx + fetcher.x) & 0xFF) / 8;
 				BYTE fetcherY = ((ly + scy) & 0xFF) / 8;
 				fetcher.tile = vram[baseAddr + (0x20 * fetcherY) + fetcherX];
@@ -212,6 +239,7 @@ void LCD::Tick()
 			{
 				WORD baseAddr = (lcdc.w.tiledata ? 0x0000 : 0x0800);
 				fetcher.lo = vram[baseAddr + 2 * ((fetcher.y + scy) % 8) + (fetcher.tile * 16)];
+				fetcher.lo *= lcdc.w.enable;
 			}
 				break;
 				
@@ -220,6 +248,7 @@ void LCD::Tick()
 				// TODO: Check LCDC.4
 				WORD baseAddr = (lcdc.w.tiledata ? 0x0000 : 0x0800);
 				fetcher.hi = vram[baseAddr + 2 * ((fetcher.y + scy) % 8) + (fetcher.tile * 16) + 1];
+				fetcher.hi *= lcdc.w.enable;
 			}
 				break;
 
@@ -245,14 +274,38 @@ void LCD::Tick()
 			fetcher.cycle++;
 			fetcher.x++;
 
-			// Draw pixels			
+			// Draw pixels		
+			if (lcdc.w.window && x + 7 == wx && ly >= wy)
+			{
+				bgFIFO.full = 0x00;
+				fetcher.cycle = 0;
+				fetcher.x = x;
+				windowMode = true;
+			}
+
 			if (bgFIFO.full & 0x00FF)	// If Data in FIFO
 			{
+
 				// calculate color 
 				BYTE color = ((bgFIFO.highByte & 0x80) >> 6) | ((bgFIFO.lowByte & 0x80) >> 7);
+				Palette* p = &bgp;
+				if (bgFIFO.sprite & 0x80)
+					p = (bgFIFO.spritePalette & 0x80) ? &obp1 : &obp0;
 
 				// set color (pretty easy huh)
-				display[ly * 160 + x] = colormap[color];
+				BYTE displayColor = 0x00;
+				switch (color)
+				{
+				case 0x00:	displayColor = colormap[p->colors.idx0]; break;
+				case 0x01:	displayColor = colormap[p->colors.idx1]; break;
+				case 0x02:	displayColor = colormap[p->colors.idx2]; break;
+				case 0x03:	displayColor = colormap[p->colors.idx3]; break;
+				}
+
+				if ((bgFIFO.sprite & 0x80) && color == 0x00)
+					displayColor = 0x00;
+
+				display[ly * 160 + x] = displayColor;
 				x++;
 
 				// advance fifo
@@ -260,6 +313,7 @@ void LCD::Tick()
 				bgFIFO.lowByte <<= 1;
 				bgFIFO.full <<= 1;
 				bgFIFO.sprite <<= 1;
+				bgFIFO.spritePalette <<= 1;
 			}
 
 			if (x == 160)	// if we reached the end of the scanline, enable hblank
@@ -306,9 +360,9 @@ bool LCD::Read(WORD addr, BYTE& val)
 		case 0xFF43:	val = scx;		return true;
 		case 0xFF44:	val = ly;		return true;
 		case 0xFF45:	val = lyc;		return true;
-		case 0xFF47:	val = bgp;		return true;
-		case 0xFF48:	val = obp0;		return true;
-		case 0xFF49:	val = obp1;		return true;
+		case 0xFF47:	val = bgp.b;	return true;
+		case 0xFF48:	val = obp0.b;	return true;
+		case 0xFF49:	val = obp1.b;	return true;
 		case 0xFF4A:	val = wy;		return true;
 		case 0xFF4B:	val = wx;		return true;
 
@@ -345,9 +399,9 @@ bool LCD::Write(WORD addr, BYTE val)
 		case 0xFF43:	scx = val;		return true;
 		case 0xFF44:	ly = val;		return true;
 		case 0xFF45:	lyc = val;		return true;
-		case 0xFF47:	bgp = val;		return true;
-		case 0xFF48:	obp0 = val;		return true;
-		case 0xFF49:	obp1 = val;		return true;
+		case 0xFF47:	bgp.b = val;	return true;
+		case 0xFF48:	obp0.b = val;	return true;
+		case 0xFF49:	obp1.b = val;	return true;
 		case 0xFF4A:	wy = val;		return true;
 		case 0xFF4B:	wx = val;		return true;
 

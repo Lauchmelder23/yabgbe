@@ -208,8 +208,8 @@ int main(int argc, char** argv)
 						BYTE loVal2 = (lo2 & (0x80 >> x)) >> (7 - x);
 						BYTE hiVal2 = (hi2 & (0x80 >> x)) >> (7 - x);
 
-						tilemappixels1[(tileX * 8 + x) + (32 * 8) * (tileY * 8 + y)] = colormap[loVal1 + hiVal1];
-						tilemappixels2[(tileX * 8 + x) + (32 * 8) * (tileY * 8 + y)] = colormap[loVal2 + hiVal2];
+						tilemappixels1[(tileX * 8 + x) + (32 * 8) * (tileY * 8 + y)] = colormap[loVal1 + (hiVal1 << 1)];
+						tilemappixels2[(tileX * 8 + x) + (32 * 8) * (tileY * 8 + y)] = colormap[loVal2 + (hiVal2 << 2)];
 					}
 				}
 			}
