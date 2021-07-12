@@ -6,6 +6,8 @@
 
 class Bus;
 
+// Structure to represent a register (register = 16 bits, but split into 2 "sub registers" of 8 bits).
+// I also store the names of the regs for debug purposes
 struct Register
 {
 	union
@@ -20,6 +22,7 @@ struct Register
 	char name[3];
 };
 
+// Convenience structure for the Interrupts
 typedef union {
 	BYTE b;
 	struct
@@ -46,6 +49,7 @@ typedef union
 	} f;
 } StatusFlag;
 
+// Read about opcode decoding, the link is in the cpu.cpp file
 typedef union
 {
 	BYTE b;
@@ -66,6 +70,8 @@ typedef union
 	} pq;
 } Opcode;
 
+
+// Contains everything related to the CPU
 class CPU
 {
 public:
@@ -100,11 +106,12 @@ public:
 
 	bool stopped;
 	bool halted;
-	bool justHaltedWithDI;
+	bool justHaltedWithDI;		// I don't even know
 
 private:
-	void WriteToRegister(BYTE reg, BYTE val);
+	void WriteToRegister(BYTE reg, BYTE val);		// The cycles, the god DAMN CPU CYCLES
 	BYTE ReadFromRegister(BYTE reg);
-	void ALU(BYTE operation, BYTE operand);
-	void CBPrefixed();
+
+	void ALU(BYTE operation, BYTE operand);			// Handle any ALU related instructions
+	void CBPrefixed();								// Handle all CB prefixed instructions
 };

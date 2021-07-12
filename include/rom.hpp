@@ -8,17 +8,7 @@
 
 class Bus;
 
-struct MemoryBankController
-{
-	BYTE w;
-	struct
-	{
-		BYTE ROMBankNumber : 5;
-		BYTE RAMBankNumber : 2;
-		BYTE Mode : 1;
-	} b;
-};
-
+// Cartridge
 class ROM
 {
 public:

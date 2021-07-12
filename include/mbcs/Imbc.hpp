@@ -2,6 +2,7 @@
 
 #include "util.hpp"
 
+// The memory bank controller (MBC) needs to map addresses targeted at rom, to get the appropriate data from the ROM
 class IMBC
 {
 public:
@@ -11,7 +12,7 @@ public:
 
 	virtual ~IMBC() {}
 
-	virtual bool GetMappedRead(WORD address, DWORD& mappedAddr) = 0;
+	virtual bool GetMappedRead(WORD address, DWORD& mappedAddr) = 0;				// Convert CPU address to ROM internal address
 	virtual bool GetMappedWrite(WORD address, BYTE val, DWORD& mappedAddr) = 0;
 
 protected:

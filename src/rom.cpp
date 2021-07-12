@@ -12,6 +12,7 @@ static BYTE bios[0x100] = {
 
 ROM::ROM(FILE* f)
 {
+	// read in rom from file
 	fseek(f, 0, SEEK_END);
 	long fsize = ftell(f);
 	rewind(f);
@@ -19,6 +20,7 @@ ROM::ROM(FILE* f)
 	data = std::vector<BYTE>(fsize);
 	fread(data.data(), 1, fsize, f);
 
+	// figure out how much ram we need (or dont need)
 	switch (data[0x149])
 	{
 	case 0x01:	ram = std::vector<BYTE>(0x800);		break;
@@ -28,6 +30,7 @@ ROM::ROM(FILE* f)
 	case 0x05:	ram = std::vector<BYTE>(0x10000);	break;
 	}
 
+	// figure out how many rom banks there are
 	WORD RomBanks = (WORD)0x2 << data[0x0148];
 	if (data[0x0148] == 0x52)
 		RomBanks = 72;
@@ -36,7 +39,8 @@ ROM::ROM(FILE* f)
 	else if (data[0x0148] == 0x54)
 		RomBanks = 96;
 
-	WORD RamBanks = 0x00;
+	// figure out how many ram banks there are
+	WORD RamBanks = 0x00;		
 	switch (data[0x0149])
 	{
 	case 0x03:	RamBanks = 4;	break;

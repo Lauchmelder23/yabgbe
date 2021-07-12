@@ -13,22 +13,24 @@
 	#define DBG_MSG(fmt, ...) do {} while(0)
 #endif
 
-#define PUSH(x)		bus->Write(--(SP.w), (x))
-#define POP()		bus->Read((SP.w)++)
-#define REG(z)		(cbRegisterTable[z])
+// Macros are cool amirite
+#define PUSH(x)		bus->Write(--(SP.w), (x))		// Push to stack
+#define POP()		bus->Read((SP.w)++)				// Pop from stack
+#define REG(z)		(cbRegisterTable[z])			// Not used even once anywhere
 
-#define HALF_CARRY_ADD(x, y) (((((x) & 0xF) + ((y) & 0xF)) & 0x10) == 0x10)
+#define HALF_CARRY_ADD(x, y) (((((x) & 0xF) + ((y) & 0xF)) & 0x10) == 0x10)		// Copied from SO
 #define HALF_CARRY_SUB(x, y) (((((x) & 0xF) - ((y) & 0xF)) & 0x10) == 0x10)
 
+// Sets up register fully automatically, assigning the strings using the variable name. kinda cool eh?
 #define SETUP_REGISTER(x) {	\
 	x.w = 0x0000;			\
 	strcpy(x.name,	#x);	\
 }
-#define REGNAME(x) x->name
-#define REGNAME_LO(x) x->name[0]
-#define REGNAME_HI(x) x->name[1]
+#define REGNAME(x) x->name					// Not
+#define REGNAME_LO(x) x->name[0]			// used
+#define REGNAME_HI(x) x->name[1]			// anywhere
 
-#define XZ_ID(op)	(op.xyz.x * 8 + op.xyz.z)
+#define XZ_ID(op)	(op.xyz.x * 8 + op.xyz.z)		// what?
 
 #ifndef NDEBUG
 	#ifndef NO_LOG
@@ -74,6 +76,7 @@ void CPU::Powerup()
 
 void CPU::Tick()
 {
+	// If halted, then we have to pray to the gods an interrupt occurs to free us from this cursed existence
 	if (halted)
 	{
 		if (interruptEnable.b & interruptFlag.b)
@@ -82,6 +85,7 @@ void CPU::Tick()
 			return;
 	}
 
+	// If we still have cycles left, then come back later and try again
 	totalCycles++;
 	if (cycles != 0)
 	{
@@ -92,6 +96,7 @@ void CPU::Tick()
 	// Check for interrupts
 	if (ime)
 	{
+		// mask the interrupts and check which ones need to be handled
 		BYTE interruptMask = interruptEnable.b & interruptFlag.b;
 		int interruptType = 0;
 		while (!(interruptMask & 0x1) && interruptMask)
@@ -102,15 +107,17 @@ void CPU::Tick()
 
 		if (interruptMask)
 		{
+			// reset interrupt flag
 			interruptFlag.b &= ~(0x1 << interruptType);
 			ime = 0;
 
+			// jump to interrupt vector
 			PUSH(PC.b.hi);
 			PUSH(PC.b.lo);
 			PC.w = interruptVectors[interruptType];
 
+			// Will take 24 machine cycles
 			cycles = 24;
-			printf("INT%02xh\n", interruptVectors[interruptType]);
 			return;
 		}
 	}

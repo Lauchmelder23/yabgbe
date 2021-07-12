@@ -5,6 +5,7 @@
 
 class Bus;
 
+// bunch of registers or smthn
 typedef union
 {
 	BYTE b;
@@ -81,13 +82,12 @@ typedef union
 	} b;
 } OAMEntry;
 
+// The screen. With emphasis on ree
 class LCD
 {
 public:
 	void Setup();
 	void Tick();
-
-	BYTE& GetReferenceToAddress(WORD addr, bool& handled);
 
 	bool Read(WORD addr, BYTE& val);
 	bool Write(WORD addr, BYTE val);
