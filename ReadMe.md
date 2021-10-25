@@ -9,6 +9,3 @@ This is my first ever emulator programming project I tackled all by myself, with
 Anyways, here is my emulator emulating tetris
 
 ![Tetris](res/tetrisemu.png)
-
-Hell yeah do you see that??! I visualize all the frigging memory, ain't
-that something cool? I think it is, at least, you get to see ALL the changes in memory and registers every single frame.
