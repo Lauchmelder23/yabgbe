@@ -10,6 +10,9 @@ add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 
 add_subdirectory("vendor/SDL")
 
+# some IDEs / text editors require compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Add source to this project's executable.
 add_subdirectory("src")
 

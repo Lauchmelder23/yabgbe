@@ -8,6 +8,9 @@
 
 #pragma once
 
+// This makes sure imgui uses glad
+#define IMGUI_IMPL_OPENGL_LOADER_GLAD
+
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
 //#define IM_ASSERT(_EXPR)  MyAssert(_EXPR)

@@ -9,7 +9,7 @@ target_sources(yabgbe PUBLIC ${OTHER_SOURCES})
 target_include_directories(yabgbe 
 	PUBLIC 
 		"${CMAKE_SOURCE_DIR}/vendor/imgui/include"
-		"${CMAKE_SOURCE_DIR}/vendor/glad/include"
+		"${CMAKE_SOURCE_DIR}/vendor/glad/include/glad/"
 		SDL2
 )
 
