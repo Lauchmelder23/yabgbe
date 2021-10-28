@@ -5,7 +5,7 @@
 
 #ifndef NDEBUG
 	#ifndef NO_LOG
-		#define DBG_MSG(fmt, ...) if(!disablePrint) printf(fmt, __VA_ARGS__)
+		#define DBG_MSG(fmt, ...) if(!disablePrint) printf(fmt, ##__VA_ARGS__)
 	#else
 		#define DBG_MSG(fmt, ...) do {} while(0)
 	#endif

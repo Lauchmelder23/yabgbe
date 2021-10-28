@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util.hpp"
+#include "../util.hpp"
 
 // The memory bank controller (MBC) needs to map addresses targeted at rom, to get the appropriate data from the ROM
 class IMBC

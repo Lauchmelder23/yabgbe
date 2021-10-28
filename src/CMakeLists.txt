@@ -15,6 +15,7 @@ target_include_directories(yabgbe
 
 target_link_libraries(yabgbe 
 	SDL2
+	${CMAKE_DL_LIBS}
 )
 
 if(WIN32)
