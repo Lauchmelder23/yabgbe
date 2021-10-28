@@ -18,6 +18,12 @@ int main(int argc, char** argv)
 
 	SDL_Init(SDL_INIT_VIDEO);
 
+	if(!SDL_WasInit(SDL_INIT_VIDEO))
+	{
+		std::cerr << "Failed to initialize SDL:\n" << SDL_GetError() << std::endl;
+		return -1;
+	}
+
 	SDL_Window* window = SDL_CreateWindow("Gameboy Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	{
 		std::cerr << "Failed to create window:\n" << SDL_GetError() << std::endl;
