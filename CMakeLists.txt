@@ -8,15 +8,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 
-find_package(SDL2 CONFIG REQUIRED)
-find_package(glad CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
-
-file(GLOB_RECURSE HEADER_FILES 
-	"include/*.hpp"
-)
+add_subdirectory("vendor/SDL")
 
 # Add source to this project's executable.
-add_subdirectory(src)
+add_subdirectory("src")
 
 # TODO: Add tests and install targets if needed.

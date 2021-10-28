@@ -1,26 +1,24 @@
-file(GLOB_RECURSE IMGUI_SRC
-	"${CMAKE_SOURCE_DIR}/vendor/imgui/src/*.cpp"
-)
+add_executable(yabgbe "main.cpp" "bus.cpp" "cpu.cpp" "rom.cpp" "lcd.cpp")
 
-add_executable(yabgbe)
-target_sources(yabgbe 
-	PRIVATE 
-		"main.cpp" "bus.cpp" "cpu.cpp" "rom.cpp" "lcd.cpp" 
-		${IMGUI_SRC}
-	PUBLIC 
-		${HEADER_FILES}
+file(GLOB_RECURSE OTHER_SOURCES
+	"${CMAKE_SOURCE_DIR}/vendor/imgui/*.cpp"
+	"${CMAKE_SOURCE_DIR}/vendor/glad/*.c"
 )
+target_sources(yabgbe PUBLIC ${OTHER_SOURCES})
 
 target_include_directories(yabgbe 
 	PUBLIC 
-		"${CMAKE_SOURCE_DIR}/include"
 		"${CMAKE_SOURCE_DIR}/vendor/imgui/include"
-		SDL2::SDL2 glad::glad
+		"${CMAKE_SOURCE_DIR}/vendor/glad/include"
+		SDL2
 )
 
 target_link_libraries(yabgbe 
-	SDL2::SDL2 SDL2::SDL2main
-	glad::glad
+	SDL2
 )
 
-target_compile_options(yabgbe PRIVATE -Wimplicit-fallthrough)
+if(WIN32)
+	add_custom_command(TARGET yabgbe POST_BUILD 
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:SDL2> $<TARGET_FILE_DIR:yabgbe>
+	)
+endif()

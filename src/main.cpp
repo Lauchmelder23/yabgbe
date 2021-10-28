@@ -8,6 +8,8 @@
 
 static BYTE colormap[4] = { 0b00000000, 0b00100101, 0b01001010, 0b10010011 };
 
+#undef main
+
 int main(int argc, char** argv)
 {
 	// Calculate the size of the window? This is literally random lol
