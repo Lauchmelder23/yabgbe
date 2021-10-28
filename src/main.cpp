@@ -3,7 +3,9 @@
 #include <iostream>
 
 #include <SDL.h>
-#include <imgui.h>
+#include <glad.h>
+#define IMGUI_IMPL_OPENGL_LOADER_GLAD
+#include <imgui_impl_opengl3.h>
 #include <imgui_sdl.h>
 
 static BYTE colormap[4] = { 0b00000000, 0b00100101, 0b01001010, 0b10010011 };
@@ -35,6 +37,11 @@ int main(int argc, char** argv)
 	{
 		std::cerr << "Failed to create accelerated rendering device:\n" << SDL_GetError() << std::endl;
 		return -1;
+	}
+
+	if(!gladLoadGL())
+	{
+		std::cerr << "Failed to load GL" << std::endl;
 	}
 
 	SDL_Event e;
