@@ -27,6 +27,7 @@ int main(int argc, char** argv)
 	}
 
 	SDL_Window* window = SDL_CreateWindow("Gameboy Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+	if(window == nullptr)
 	{
 		std::cerr << "Failed to create window:\n" << SDL_GetError() << std::endl;
 		return -1;
